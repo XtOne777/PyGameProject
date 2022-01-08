@@ -34,14 +34,17 @@ def battle(player, mob, mode='do'):
 
 class Human:
     def __init__(self, name, classes=Standart()):
-        self.name = name
-        self.max_stamina = 10
-        self.max_health = 100
-        self.health = 0 + self.max_health
-        self.stamina = 0 + self.max_stamina
-        self.lvl = 1
-        self.exp = 0
-        self.classes = classes
+        if name[0:11] != 'load_data: ':
+            self.name = name
+            self.max_stamina = 10
+            self.max_health = 100
+            self.health = 0 + self.max_health
+            self.stamina = 0 + self.max_stamina
+            self.lvl = 1
+            self.exp = 0
+            self.classes = classes
+        else:
+            pass  # тут будет загрузка сохранёных данных
 
     def __getitem__(self, item):
         if item == 'name':
@@ -106,12 +109,12 @@ class Mob:
 
 if __name__ == "__main__":
     a = Human('Игрок 1')
-    b = Mob('Гоблин', 100, 10)
+    b = Mob('Гоблин', health=100, dmg=10)
     c = list()
     c.append(battle(a, b))
     money = 0
     if c[-1]:
-        money = 1
+        money += 1
     else:
-        money = 0
+        pass
     print(money)
