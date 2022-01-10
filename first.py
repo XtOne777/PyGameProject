@@ -5,9 +5,10 @@ import sys
 
 money = 0
 exp = 0
-lvl_step = 1
+lvl_step = 2
 mob_lvl = {1: (('goblin', 100, 10),),
-           2: (('goblin', 100, 10), ('slime', 200, 10))}
+           2: (('goblin', 100, 10), ('goblin', 100, 10)),
+           0: (('goblin', 100, 10), ('goblin', 100, 10), ('goblin', 100, 10))}
 
 
 def slot_load(name, place):
@@ -272,7 +273,7 @@ class Human(pygame.sprite.Sprite):
 
 
 class Mob(pygame.sprite.Sprite):
-    def __init__(self, name, health, dmg, *group):
+    def __init__(self, name, health, dmg, place, *group):
         super().__init__(*group)
         self.group = group
         self.name = name
@@ -283,8 +284,8 @@ class Mob(pygame.sprite.Sprite):
         if name == 'goblin':
             self.image = pygame.transform.scale(load_image('./textures/mobs/lvl 0/goblin.png'), (105, 127.5))
         self.rect = self.image.get_rect()
-        self.rect.x = 600
-        self.rect.y = 300
+        self.rect.x = place[0]
+        self.rect.y = place[1]
 
     def update(self):
         pygame.draw.polygon(screen, (0, 0, 0), [(self.rect.x, self.rect.y - 10), (self.rect.x + 105, self.rect.y - 10),
@@ -310,6 +311,7 @@ class Mob(pygame.sprite.Sprite):
 
     def got_damage(self, dmg):
         self.health -= dmg
+        print(self.image)
 
     def is_died(self):
         if self.health <= 0:
@@ -395,11 +397,13 @@ if __name__ == "__main__":
 
             # Мобы
             mobs = list()
-            if lvl_step == 1:
-                mobs_list = mob_lvl[1]
-                for mob_data in mobs_list:
-                    mobs.append(Mob(mob_data[0], mob_data[1], mob_data[2], sprites))
-
+            mobs_list = mob_lvl[lvl_step]
+            check_list = list()
+            for mob_data in mobs_list:
+                check_list.append(mob_data)
+            for steps in range(len(mobs_list)):
+                mobs.append(Mob(check_list[steps][0], check_list[steps][1], check_list[steps][2],
+                                (600 + (steps % 2) * 100, 150 + 200 / len(mobs_list) * (steps + 1)), sprites))
             # Старт игры
             while start_game:
                 screen.fill((0, 0, 0))
@@ -430,36 +434,43 @@ if __name__ == "__main__":
                             flag = False
                             if 300 <= event.pos[0] <= 300 + 69 and 488 <= event.pos[1] <= 488 + 69:
                                 player.attack_animate()
+                                num = int(input())
                                 slot_color_change(slot_1, (255, 0, 0))
-                                if mobs[0]:
+                                if mobs[num]:
                                     damage = player.attack(slot_1_attack[0], slot_1_attack[1])
-                                    mobs[0].got_damage(damage)
+                                    mobs[num].got_damage(damage)
                                 flag = True
                             elif 450 <= event.pos[0] <= 450 + 69 and 488 <= event.pos[1] <= 488 + 69:
                                 player.attack_animate()
+                                num = int(input())
                                 slot_color_change(slot_2, (255, 0, 0))
-                                if mobs[0]:
+                                if mobs[num]:
                                     damage = player.attack(slot_2_attack[0], slot_2_attack[1])
-                                    mobs[0].got_damage(damage)
+                                    mobs[num].got_damage(damage)
                                 flag = True
                             elif 600 <= event.pos[0] <= 600 + 69 and 488 <= event.pos[1] <= 488 + 69:
                                 player.attack_animate()
+                                num = int(input())
                                 slot_color_change(slot_3, (255, 0, 0))
-                                if mobs[0]:
+                                if mobs[num]:
                                     damage = player.attack(slot_3_attack[0], slot_3_attack[1])
-                                    mobs[0].got_damage(damage)
+                                    mobs[num].got_damage(damage)
                                 flag = True
                             else:
                                 damage = None
                             if flag:
+                                sprites.update()
+                                pygame.display.flip()
+                                flag = False
                                 if mobs:
-                                    if mobs[0]:
-                                        if mobs[0].is_died():
-                                            money += 10
-                                            exp += 10
+                                    for step in range(len(mobs)):
+                                        if mobs[step].is_died():
+                                            pass
                 if not running:
                     break
                 sprites.update()
                 pygame.display.flip()
+            money += 10
+            exp += 10
             lvl_step += 1
     pygame.quit()  # завершение работы:
