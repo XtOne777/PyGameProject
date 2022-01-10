@@ -1,4 +1,5 @@
 from classes import *
+import pygame
 
 
 def battle(player, mob, mode='do'):
@@ -7,7 +8,7 @@ def battle(player, mob, mode='do'):
         print(f'{player["name"]}: {player["health"]}')
         print(f'{mob["name"]}: {mob["health"]}')
         while player.is_died() and mob.is_died():
-            argument = bool(input())
+            argument = input()
             if argument:
                 player_dmg = player.heavy_attack()
             else:
@@ -78,7 +79,7 @@ class Human:
         self.health -= dmg
 
     def is_died(self):
-        return not self.health <= 0
+        return self.health > 0
 
     def revive(self):
         self.health = 0 + self.max_health
@@ -104,14 +105,14 @@ class Mob:
         self.health -= dmg
 
     def is_died(self):
-        return not self.health <= 0
+        return self.health > 0
 
 
 if __name__ == "__main__":
-    a = Human('Игрок 1')
+    a = Human('Игрок 1', classes=Magic())
     b = Mob('Гоблин', health=100, dmg=10)
     c = list()
-    c.append(battle(a, b))
+    c.append(battle(a, b, 'say'))
     money = 0
     if c[-1]:
         money += 1
