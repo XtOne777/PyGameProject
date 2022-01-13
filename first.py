@@ -5,10 +5,9 @@ import sys
 
 money = 0
 exp = 0
-lvl_step = 2
+lvl_step = 1
 mob_lvl = {1: (('goblin', 100, 10),),
-           2: (('goblin', 100, 10), ('goblin', 100, 10)),
-           0: (('goblin', 100, 10), ('goblin', 100, 10), ('goblin', 100, 10))}
+           2: (('goblin', 100, 10), ('goblin', 100, 10))}
 
 
 def slot_load(name, place):
@@ -264,7 +263,6 @@ class Human(pygame.sprite.Sprite):
         self.health -= dmg
 
     def is_died(self):
-
         return self.health > 0
 
     def revive(self):
@@ -311,7 +309,6 @@ class Mob(pygame.sprite.Sprite):
 
     def got_damage(self, dmg):
         self.health -= dmg
-        print(self.image)
 
     def is_died(self):
         if self.health <= 0:
@@ -466,8 +463,6 @@ if __name__ == "__main__":
                                     for step in range(len(mobs)):
                                         if mobs[step].is_died():
                                             pass
-                if not running:
-                    break
                 sprites.update()
                 pygame.display.flip()
             money += 10
