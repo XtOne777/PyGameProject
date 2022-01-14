@@ -10,6 +10,25 @@ mob_lvl = {1: (('goblin', 100, 10),),
            2: (('goblin', 100, 10), ('goblin', 100, 10))}
 
 
+class FontLoad(pygame.sprite.Sprite):
+    def __init__(self, place, value, size_value, *group):
+        super().__init__(*group)
+        font = pygame.font.Font(None, size_value)
+        self.group = group
+        self.text = font.render(str(value), True, (255, 70, 70, 110))
+        self.image = self.text
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = place
+        self.step = 0
+
+    def update(self):
+        if self.step <= 50:
+            self.rect.y -= 1
+        else:
+            sprites.remove(self)
+        self.step += 1
+
+
 def slot_load(name, place):
     slot = pygame.sprite.Sprite()
     slot.image = pygame.transform.scale(load_image(name, 0), (69, 69))
@@ -76,6 +95,49 @@ def load_image(name, colorkey=None):
     if colorkey:
         image.set_colorkey(colorkey)
     return image
+
+
+class AttackingZoneClass(pygame.sprite.Sprite):
+    def __init__(self, mob_list, *group):
+        super().__init__(*group)
+        self.image = load_image('./textures/mobs/scale_model.png')
+        self.rect = self.image.get_rect()
+        self.mob_list = mob_list
+        self.rect.x, self.rect.y = mob_list[0]['place']
+        self.mob_attack = 0
+        self.is_show = False
+        self.scaled = False
+        self.step = 0
+
+    def update(self):
+        if self.is_show:
+            self.image.set_alpha(255)
+            if self.step == 0:
+                if self.scaled:
+                    self.image = load_image('./textures/mobs/scale_model.png')
+                else:
+                    self.image = load_image('./textures/mobs/scale_model_1.png')
+            self.step += 1
+            if self.step == 30:
+                self.step = 0
+                self.scaled = not self.scaled
+        else:
+            self.image.set_alpha(0)
+
+    def mouse_place(self, place):
+        x, y = place
+        for i in range(len(self.mob_list)):
+            x1, y1 = self.mob_list[i]['place']
+            if x1 <= x <= x1 + 105 and y1 <= y <= y1 + 127.5:
+                self.rect.x, self.rect.y = x1, y1
+                self.mob_attack = i
+                break
+
+    def attack(self):
+        return self.mob_attack
+
+    def change_picture(self, change):
+        self.is_show = change
 
 
 class StaminaBar(pygame.sprite.Sprite):
@@ -232,6 +294,8 @@ class Human(pygame.sprite.Sprite):
             return self.stamina
         elif item == 'max_stamina':
             return self.max_stamina
+        elif item == 'place':
+            return self.rect.x, self.rect.y
 
     def low_attack(self, type_attack=None):
         if self.stamina + 3 > self.max_stamina:
@@ -303,6 +367,8 @@ class Mob(pygame.sprite.Sprite):
             return self.health
         if item == 'max_health':
             return self.max_health
+        if item == 'place':
+            return self.rect.x, self.rect.y
 
     def low_attack(self, chance=5):
         return self.dmg * 2 if randint(0, 100) < chance else self.dmg
@@ -401,12 +467,25 @@ if __name__ == "__main__":
             for steps in range(len(mobs_list)):
                 mobs.append(Mob(check_list[steps][0], check_list[steps][1], check_list[steps][2],
                                 (600 + (steps % 2) * 100, 150 + 200 / len(mobs_list) * (steps + 1)), sprites))
+
+            # Зоны атаки
+            AttackingZone = AttackingZoneClass(mobs, sprites)
+
             # Старт игры
             while start_game:
                 screen.fill((0, 0, 0))
+                if not player.is_died():
+                    good_load('./textures/scenes/game_over.png',
+                              './textures/scenes/game_over_RIP.png')
+                    while True:
+                        for event in pygame.event.get():
+                            if event.type == pygame.QUIT:
+                                sys.exit()
+                        pygame.display.flip()
                 sprites.draw(screen)
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
+                        start_game = False
                         running = False
                     if event.type == pygame.MOUSEMOTION:
                         if not player['is_attacking']:
@@ -430,42 +509,59 @@ if __name__ == "__main__":
                         if not player['is_attacking']:
                             flag = False
                             if 300 <= event.pos[0] <= 300 + 69 and 488 <= event.pos[1] <= 488 + 69:
-                                player.attack_animate()
-                                num = int(input())
                                 slot_color_change(slot_1, (255, 0, 0))
-                                if mobs[num]:
-                                    damage = player.attack(slot_1_attack[0], slot_1_attack[1])
-                                    mobs[num].got_damage(damage)
+                                damage = player.attack(slot_1_attack[0], slot_1_attack[1])
                                 flag = True
                             elif 450 <= event.pos[0] <= 450 + 69 and 488 <= event.pos[1] <= 488 + 69:
-                                player.attack_animate()
-                                num = int(input())
                                 slot_color_change(slot_2, (255, 0, 0))
-                                if mobs[num]:
-                                    damage = player.attack(slot_2_attack[0], slot_2_attack[1])
-                                    mobs[num].got_damage(damage)
+                                damage = player.attack(slot_2_attack[0], slot_2_attack[1])
                                 flag = True
                             elif 600 <= event.pos[0] <= 600 + 69 and 488 <= event.pos[1] <= 488 + 69:
-                                player.attack_animate()
-                                num = int(input())
                                 slot_color_change(slot_3, (255, 0, 0))
-                                if mobs[num]:
-                                    damage = player.attack(slot_3_attack[0], slot_3_attack[1])
-                                    mobs[num].got_damage(damage)
+                                damage = player.attack(slot_3_attack[0], slot_3_attack[1])
                                 flag = True
                             else:
                                 damage = None
                             if flag:
-                                sprites.update()
-                                pygame.display.flip()
+                                stop = False
+                                AttackingZone.change_picture(True)
+                                while not stop:
+                                    screen.fill((0, 0, 0))
+                                    sprites.draw(screen)
+                                    for event_2 in pygame.event.get():
+                                        if event_2 == pygame.QUIT:
+                                            sys.exit()
+                                        if event_2.type == pygame.MOUSEBUTTONUP:
+                                            num = AttackingZone.attack()
+                                            mobs[num].got_damage(damage)
+                                            place_mob = list(mobs[num]['place'])
+                                            place_mob[0] -= 20
+                                            FontLoad(place_mob, f'-{damage}', 35, sprites)
+                                            stop = True
+                                        if event_2.type == pygame.MOUSEMOTION:
+                                            AttackingZone.mouse_place(event_2.pos)
+                                    sprites.update()
+                                    pygame.display.flip()
+                                AttackingZone.change_picture(False)
+                                player.attack_animate()
                                 flag = False
                                 if mobs:
+                                    mob_died = 0
                                     for step in range(len(mobs)):
                                         if mobs[step].is_died():
-                                            pass
+                                            damage_mob = mobs[step].low_attack()
+                                            player.got_damage(damage_mob)
+                                            player_place = list(player['place'])
+                                            player_place[0] += 100
+                                            FontLoad(player_place, f'-{damage_mob}', 35, sprites)
+                                        else:
+                                            mob_died += 1
+                                    if mob_died == len(mobs):
+                                        start_game = False
                 sprites.update()
                 pygame.display.flip()
             money += 10
             exp += 10
             lvl_step += 1
+            start_game = True
     pygame.quit()  # завершение работы:
