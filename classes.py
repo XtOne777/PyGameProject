@@ -123,7 +123,7 @@ class Fighting(Standart):
         self.buff = 1.2
         self.heavy_attack_buff = 2.5
 
-    def heavy_attack(self, type_attack='Normal', miss_buff=2.5):
+    def heavy_attack(self, type_attack='Normal', miss_buff=2.25):
         # Шанс промаха увеличен на 0.5
         return super().heavy_attack(miss_buff=miss_buff, type_attack=type_attack)
 
@@ -135,6 +135,6 @@ class Magic(Standart):
         self.buff = 1.4
         self.heavy_attack_buff = 3  # Нуждается в изменение(Возможно)
 
-    def heavy_attack(self, type_attack='Normal', miss_buff=3):
+    def heavy_attack(self, type_attack='Normal', miss_buff=2.25):
         # Шанс промаха увеличен на 1.0
         return super().heavy_attack(type_attack=type_attack, miss_buff=miss_buff)
