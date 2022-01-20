@@ -8,7 +8,7 @@ import webbrowser
 pygame.init()
 screenA = pygame.display.set_mode((1000, 600))
 
-pygame.display.set_caption("пробник")
+pygame.display.set_caption("для настроек")
 background_image = pygame.image.load('data/textures/scenes/menu_scene.png')
 
 setting_img = pygame.image.load("data/textures/scenes/setting_button.jpg")
