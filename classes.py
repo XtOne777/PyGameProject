@@ -29,7 +29,7 @@ class Standart:
             total = randint(80, 120) * self.damage / 100 + bonus \
                 if randint(0, 100) > self.miss_chance \
                 else 0
-            total = total * self.buff * self.heavy_attack_buff  # Стандартное усиление + усиление сильных атак
+            total = total * self.buff  # Стандартное усиление
 
         elif type_attack == 'Water':
             # Крит урон +30%; Доп. урон(в районе от 0.2 до 10);
@@ -39,7 +39,7 @@ class Standart:
             total = randint(80, 120) * self.damage / 100 + bonus \
                 if randint(0, 100) > self.miss_chance \
                 else 0
-            total = total * self.buff * self.heavy_attack_buff  # Стандартное усиление + усиление сильных атак
+            total = total * self.buff  # Стандартное усиление
 
         elif type_attack == 'Wind':
             # Крит урон +50%; Доп. урон(в районе от 0.2 до 8); Доп крит. шанс +10%
@@ -49,7 +49,7 @@ class Standart:
             total = randint(80, 120) * self.damage / 100 + bonus \
                 if randint(0, 100) > self.miss_chance \
                 else 0
-            total = total * self.buff * self.heavy_attack_buff  # Стандартное усиление + усиление сильных атак
+            total = total * self.buff  # Стандартное усиление
 
         elif type_attack == 'Grass':
             # Крит урон +25%; Доп. урон(в районе от 0.2 до 10); Шанс крит. урона +10%
@@ -59,7 +59,7 @@ class Standart:
             total = randint(80, 120) * self.damage / 100 + bonus \
                 if randint(0, 100) > self.miss_chance \
                 else 0
-            total = total * self.buff * self.heavy_attack_buff  # Стандартное усиление + усиление сильных атак
+            total = total * self.buff  # Стандартное усиление
         return dupe(total)
 
     def heavy_attack(self, type_attack='Normal', miss_buff=2):

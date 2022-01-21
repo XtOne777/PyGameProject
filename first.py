@@ -8,6 +8,37 @@ exp = 0
 lvl_step = 1
 mob_lvl = {1: (('goblin', 100, 10),),
            2: (('goblin', 100, 10), ('goblin', 100, 10))}
+particles = True
+auto_save = True
+
+
+class Particle(pygame.sprite.Sprite):
+    def __init__(self, pos, *group):
+        super().__init__(*group)
+        self.velocity = [randint(-15, 15), randint(-5, 5)]
+        random = randint(1, 10)
+        self.image = pygame.transform.scale(load_image('textures/particles/blood.png', 0), (random, random))
+        self.rect = self.image.get_rect()
+        self.rect.x, self.rect.y = pos
+        self.ticks = 0
+
+    def update(self):
+        if self.ticks == 10:
+            self.kill()
+        self.ticks += 1
+        self.rect.x += self.velocity[0]
+        self.rect.y += self.velocity[1]
+        if self.velocity[0] > 0:
+            self.velocity[0] -= 2
+        elif self.velocity[0] < 0:
+            self.velocity[0] += 2
+        if self.velocity[1] < 5:
+            self.velocity[1] += 1
+
+
+def create_blood(pos, k=20, *group):
+    for _ in range(k):
+        Particle(pos, *group)
 
 
 def slot_color_reload(pos):
@@ -46,6 +77,7 @@ class FontLoad(pygame.sprite.Sprite):
             self.rect.y -= 1
         else:
             sprites.remove(self)
+            self.kill()
         self.step += 1
 
 
@@ -147,9 +179,9 @@ class AttackingZoneClass(pygame.sprite.Sprite):
     def mouse_place(self, place):
         x, y = place
         for i in range(len(self.mob_list)):
-            x1, y1 = self.mob_list[i]['place']
-            if x1 <= x <= x1 + 105 and y1 <= y <= y1 + 127.5:
-                self.rect.x, self.rect.y = x1, y1
+            xx, yx = self.mob_list[i]['place']
+            if xx <= x <= xx + 105 and yx <= y <= yx + 127.5:
+                self.rect.x, self.rect.y = xx, yx
                 self.mob_attack = i
                 break
 
@@ -299,10 +331,8 @@ class Human(pygame.sprite.Sprite):
     def update(self):
         if self.animate:
             if self.step <= 25:
-                self.rect.x += 3 + (25 - self.step) / 75
                 self.step += 1
             elif self.step <= 50:
-                self.rect.x -= 3 + (self.step - 46) / 75
                 self.step += 1
             else:
                 self.step = 0
@@ -434,6 +464,38 @@ if __name__ == "__main__":
     size = width, height = 1000, 600
     # screen — холст, на котором нужно рисовать:
     screen = pygame.display.set_mode(size)
+
+    background_image = load_image('textures/scenes/menu_scene.png', 0)
+    setting_img = load_image("textures/scenes/setting_button.png", 0)
+    discord_img = pygame.transform.scale(load_image("textures/scenes/Discord_Logo.png"), (90, 90))
+    github_img = pygame.transform.scale(load_image("textures/scenes/git_btn.png"), (90, 90))
+    # credits_img = load_image("textures/scenes/cred_btn.jpg")
+    effect_img = load_image("textures/scenes/ef_btn.png", 0)
+    save_img = load_image("textures/scenes/save_btn.jpg", 0)
+
+
+    class Button(pygame.sprite.Sprite):
+        def __init__(self, xx, yy, image, *groups):
+            super().__init__(*groups)
+            self.image = image
+            self.rect = self.image.get_rect()
+            self.rect.x, self.rect.y = (xx, yy)
+
+
+    sprites = pygame.sprite.Group()
+    settings_group = pygame.sprite.Group()
+    window_set = pygame.sprite.Sprite()
+    window_set.image = load_image('textures/scenes/set_win2.jpg', 0)
+    window_set.rect = window_set.image.get_rect()
+    window_set.rect.x, window_set.rect.y = 250, 50
+    settings_group.add(window_set)
+    setting_btn = Button(850, 470, pygame.transform.scale(setting_img, (100, 100)), sprites)
+    discord_btn = Button(420, 430, discord_img, settings_group)
+    github_btn = Button(570, 430, github_img, settings_group)
+    # credits_btn = Button(260, 460, credits_img, settings_group)
+    effect_btn = Button(370, 130, effect_img, settings_group)
+    save_btn = Button(370, 330, save_img, settings_group)
+    btn_click = False
     clock = pygame.time.Clock()
     pygame.display.flip()
     running = True
@@ -448,20 +510,30 @@ if __name__ == "__main__":
                 screen.blit(load_image('./textures/scenes/menu_scene.png', 0), (0, 0))
                 screen.blit(pygame.transform.scale(load_image('./textures/scenes/button_play.png'), (150, 150)),
                             (410, 400))
+                sprites.draw(screen)
+                sprites.update()
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         running = False
                     if event.type == pygame.MOUSEBUTTONUP:
-                        if 410 <= event.pos[0] <= 410 + 150 and 400 <= event.pos[1] <= 550:
-                            start_menu = False
-                            start_game = True
-                            load_game()
+                        # slot_color_change(effect_btn, (255, 0, 0)) - так надо менять цвета на красный
+                        # slot_color_change(effect_btn, (0, 255, 0)) - а так на зеленый
+                        x1, y1 = pygame.mouse.get_pos()
+                        if 750 <= x1 <= 950 and 470 <= y1 <= 570:
+                            btn_click = not btn_click
+                        if not btn_click:
+                            if 410 <= event.pos[0] <= 410 + 150 and 400 <= event.pos[1] <= 550:
+                                start_menu = False
+                                start_game = True
+                                load_game()
+                if btn_click:
+                    settings_group.draw(screen)
+                    settings_group.update()
                 if not running:
                     break
                 pygame.display.flip()
             while running:
-                sprites = pygame.sprite.Group()
-
+                sprites.empty()
                 # Главная сцена
                 main_scene = pygame.sprite.Sprite()
                 main_scene.image = load_image('./textures/scenes/scene(lvl 1).png', 0)
@@ -594,6 +666,10 @@ if __name__ == "__main__":
                                     flag = False
                                     if mobs:
                                         mob_died = 0
+                                        player_place = list(player['place'])
+                                        player_place[0] += 45
+                                        player_place[1] += 55
+                                        create_blood(player_place, 20, sprites)
                                         for step in range(len(mobs)):
                                             if mobs[step].is_died():
                                                 damage_mob = mobs[step].low_attack()
@@ -613,8 +689,9 @@ if __name__ == "__main__":
                 lvl_step += 1
                 start_game = True
     except KeyError:
-        print('You win!')
-        sys.exit()  # Пока что, только так
+        while True:
+            screen.fill((randint(0, 255), randint(0, 255), randint(0, 255)))
+            pygame.display.flip()
     except Exception as e:
         print(e)
     pygame.quit()  # завершение работы:
