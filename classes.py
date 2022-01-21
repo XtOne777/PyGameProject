@@ -82,12 +82,12 @@ class Standart:
             total = total * self.buff * self.heavy_attack_buff  # Стандартное усиление + усиление сильных атак
 
         elif type_attack == 'Water':
-            # Крит урон +50%; Доп. урон(в районе от 0.2 до 20);
+            # Крит урон +50%; Доп. урон(в районе от 0.2 до 20); Шанс промоха -20%;
             # Бонусный урон(крит, тип атаки)
             bonus = self.damage * 1.5 + 0.2 * randint(1, 100) if randint(0, 100) <= self.critical_chance else 0
 
             total = randint(80, 120) * self.damage / 100 + bonus \
-                if randint(0, 100) > self.miss_chance * miss_buff \
+                if randint(0, 100) > (self.miss_chance * miss_buff - 20) \
                 else 0
             total = total * self.buff * self.heavy_attack_buff  # Стандартное усиление + усиление сильных атак
 
