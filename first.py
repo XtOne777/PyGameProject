@@ -7,9 +7,157 @@ money = 0
 exp = 0
 lvl_step = 1
 mob_lvl = {1: (('goblin', 100, 10),),
-           2: (('goblin', 100, 10), ('goblin', 100, 10))}
+           2: (('goblin', 100, 10), ('goblin', 100, 10)),
+           3: (('goblin', 100, 10), ('goblin', 100, 10), ('goblin', 100, 10))}
 particles = True
 auto_save = True
+true_inventory = [('', '') for _ in range(15)] + [('heavy_attack', 'Fire'), ('low_attack', 'Normal'), ('heal', 'Holy')]
+attacks = {('low_attack', 'Normal'): './textures/player/attacks/low_attack.png',
+           ('heavy_attack', 'Fire'): './textures/player/attacks/heavy_attack_fire.png',
+           ('heal', 'Holy'): './textures/player/attacks/heal_magic.png'}
+
+
+def shop_and_inventory():
+    global true_inventory
+    sprite_shop = pygame.sprite.Group()
+    sprite_inventory = pygame.sprite.Group()
+    main_buttons = pygame.sprite.Group()
+    inventory_open = False
+
+    button_inventory = pygame.sprite.Sprite()
+    button_inventory.image = load_image('./textures/scenes/inventory_button.png', 0)
+    button_inventory.rect = button_inventory.image.get_rect()
+    button_inventory.rect.x, button_inventory.rect.y = 870, 500
+    main_buttons.add(button_inventory)
+
+    scene_shop = pygame.sprite.Sprite()
+    scene_shop.image = load_image('./textures/scenes/shop.png', 0)
+    scene_shop.rect = scene_shop.image.get_rect()
+    scene_shop.rect.x, scene_shop.rect.y = 0, 0
+    sprite_shop.add(scene_shop)
+
+    player_sprite = pygame.sprite.Sprite()
+    player_sprite.image = pygame.transform.scale(load_image('./textures/player/standart.png'), (140, 170))
+    player_sprite.rect = player_sprite.image.get_rect()
+    player_sprite.rect.x, player_sprite.rect.y = 100, 300
+    sprite_shop.add(player_sprite)
+
+    inventory = pygame.sprite.Sprite()
+    inventory.image = load_image('./textures/scenes/inventory.png', 0)
+    inventory.rect = inventory.image.get_rect()
+    inventory.rect.x, inventory.rect.y = 0, 0
+
+    button_skip = pygame.sprite.Sprite()
+    button_skip.image = load_image('./textures/scenes/level_button.png', 0)
+    button_skip.rect = button_skip.image.get_rect()
+    button_skip.rect.x, button_skip.rect.y = 760, 500
+    sprite_shop.add(button_skip)
+
+    class Attacks(pygame.sprite.Sprite):
+        def __init__(self, pos, name, *group):
+            super().__init__(*group)
+            if name:
+                self.image = pygame.transform.scale(load_image(attacks[name]), (90, 90))
+            else:
+                self.image = pygame.surface.Surface((0, 0))
+            self.rect = self.image.get_rect()
+            self.rect.x, self.rect.y = pos
+
+        def change_pos(self, pos):
+            self.rect.x, self.rect.y = pos
+
+    class Slot(pygame.sprite.Sprite):
+        def __init__(self, pos, *group):
+            super().__init__(*group)
+            self.image = pygame.transform.scale(load_image('./textures/scenes/inventory_slot.png', 0), (100, 100))
+            self.rect = self.image.get_rect()
+            self.rect.x, self.rect.y = pos
+            pp = self.image.get_at((0, 0))
+            self.colors = pp
+            self.click = False
+
+        def return_pos(self):
+            return self.rect.x, self.rect.y
+
+        def change_color(self, color):
+            color_pos = self.image.get_at((0, 0))
+            for x_pos in range(self.image.get_size()[0]):
+                for y_pos in range(self.image.get_size()[1]):
+                    if self.image.get_at((x_pos, y_pos)) == color_pos:
+                        self.image.set_at((x_pos, y_pos), color)
+
+        def clicked(self):
+            if self.colors == self.image.get_at((0, 0)):
+                self.change_color((255, 0, 0))
+                self.click = not self.click
+            else:
+                self.change_color(self.colors)
+                self.click = not self.click
+
+        def reload(self):
+            if self.colors != self.image.get_at((0, 0)):
+                self.change_color((0, 0, 0))
+
+    slots = list()
+    sprite_inventory.add(inventory)
+    clicked_slots = []
+    true_slots = true_inventory
+    for xs in range(5):
+        for ys in range(3):
+            a = (25 + xs * 100 + 110 * xs, 30 + ys * 100 + 30 * ys)
+            slots.append(Slot(a, sprite_inventory))
+    for xy in range(3):
+        a = (180 + 250 * xy, 455)
+        slots.append(Slot(a, sprite_inventory))
+    attack_slots = list()
+    for i in range(15):
+        pose = slots[i].return_pos()
+        attack_slots.append(Attacks((pose[0] + 5, pose[1] + 5), None, sprite_inventory))
+    for number, i in enumerate(true_slots):
+        if i[0]:
+            pose = slots[number].return_pos()
+            attack_slots.append(Attacks((pose[0] + 5, pose[1] + 5), true_slots[number], sprite_inventory))
+
+    inventory_shop = True
+    while inventory_shop:
+        screen.fill((0, 0, 0))
+        if inventory_open:
+            sprite_inventory.update()
+            sprite_inventory.draw(screen)
+        else:
+            sprite_shop.update()
+            sprite_shop.draw(screen)
+        for events in pygame.event.get():
+            if events.type == pygame.MOUSEBUTTONUP:
+                xx, yy = pygame.mouse.get_pos()
+                if inventory_open:
+                    for number, i in enumerate(slots):
+                        xx2, yy2 = i.return_pos()
+                        if xx2 <= xx <= xx2 + 100 and yy2 <= yy <= yy2 + 100:
+                            i.clicked()
+                            clicked_slots.append(number)
+                if 870 <= xx <= 960 and 500 <= yy <= 590:
+                    inventory_open = not inventory_open
+                if 760 <= xx <= 850 and 500 <= yy <= 590 and not inventory_open:
+                    inventory_shop = False
+            if events.type == pygame.QUIT:
+                sys.exit()
+        if len(clicked_slots) == 2:
+            true_slots[clicked_slots[0]], true_slots[clicked_slots[1]] =\
+                true_slots[clicked_slots[1]], true_slots[clicked_slots[0]]
+            slots[clicked_slots[0]].reload()
+            slots[clicked_slots[1]].reload()
+            xd = slots[clicked_slots[1]].return_pos()
+            attack_slots[clicked_slots[0]].change_pos((xd[0] + 5, xd[1] + 5))
+            xd = slots[clicked_slots[0]].return_pos()
+            attack_slots[clicked_slots[1]].change_pos((xd[0] + 5, xd[1] + 5))
+            attack_slots[clicked_slots[1]], attack_slots[clicked_slots[0]] =\
+                attack_slots[clicked_slots[0]], attack_slots[clicked_slots[1]]
+            clicked_slots = []
+        main_buttons.update()
+        main_buttons.draw(screen)
+        pygame.display.flip()
+    true_inventory = true_slots
 
 
 class Particle(pygame.sprite.Sprite):
@@ -73,8 +221,8 @@ class FontLoad(pygame.sprite.Sprite):
         self.step = 0
 
     def update(self):
-        if self.step <= 50:
-            self.rect.y -= 1
+        if self.step <= 25:
+            self.rect.y -= 2.5
         else:
             sprites.remove(self)
             self.kill()
@@ -245,22 +393,12 @@ class HealthBar(pygame.sprite.Sprite):
 class Attack(pygame.sprite.Sprite):
     def __init__(self, name, slot=0, *group):
         super().__init__(*group)
-        if name[0] == 'heavy_attack':
-            if name[1] == 'Normal':
-                self.attack = pygame.sprite.Sprite()
-                self.image = pygame.transform.scale(load_image('./textures/player/attacks/heavy_attack.png'),
-                                                              (45, 45))
-            elif name[1] == 'Fire':
-                self.attack = pygame.sprite.Sprite()
-                self.image = pygame.transform.scale(load_image('./textures/player/attacks/heavy_attack_fire.png'),
-                                                              (45, 45))
-        elif name[0] == 'low_attack':
+        if name[0]:
             self.attack = pygame.sprite.Sprite()
-            self.image = pygame.transform.scale(load_image('./textures/player/attacks/low_attack.png'),
-                                                          (45, 45))
-        elif name[0] == 'Heal':
+            self.image = pygame.transform.scale(load_image(attacks[name]), (45, 45))
+        else:
             self.attack = pygame.sprite.Sprite()
-            self.image = pygame.transform.scale(load_image('./textures/player/attacks/heal_magic.png'), (45, 45))
+            self.image = pygame.surface.Surface((0, 0))
         self.rect = self.image.get_rect()
         self.slot = slot
         if slot == 0:
@@ -320,19 +458,21 @@ class Human(pygame.sprite.Sprite):
                 return self.low_attack(type_attack), 'attack'
             if attack == 'heavy_attack':
                 return self.heavy_attack(type_attack), 'attack'
-            if attack == 'Heal':
+            if attack == 'heal':
                 if not isinstance(self.classes, Fighting):
                     heal = randint(20, 50)
                     if isinstance(self.classes, Magic):
                         heal += 20
                     return heal, 'heal'
-            return 0.0, 'attack'
+        if self.stamina + 2 < self.max_stamina:
+            self.stamina += 2
+        else:
+            self.stamina = self.max_stamina + 0
+        return 0.0, 'attack'
 
     def update(self):
         if self.animate:
             if self.step <= 25:
-                self.step += 1
-            elif self.step <= 50:
                 self.step += 1
             else:
                 self.step = 0
@@ -533,6 +673,7 @@ if __name__ == "__main__":
                     break
                 pygame.display.flip()
             while running:
+
                 sprites.empty()
                 # Главная сцена
                 main_scene = pygame.sprite.Sprite()
@@ -570,14 +711,6 @@ if __name__ == "__main__":
                 sprites.add(slot_2)
                 sprites.add(slot_3)
 
-                # Атаки
-                slot_1_attack = ('heavy_attack', 'Fire')
-                Attack(slot_1_attack, 1, sprites)
-                slot_2_attack = ('low_attack', 'Normal')
-                Attack(slot_2_attack, 2, sprites)
-                slot_3_attack = ('Heal', 'Holy')
-                Attack(slot_3_attack, 3, sprites)
-
                 # Мобы
                 mobs = list()
                 mobs_list = mob_lvl[lvl_step]
@@ -592,6 +725,16 @@ if __name__ == "__main__":
                 AttackingZone = AttackingZoneClass(mobs, sprites)
 
                 # Старт игры
+                shop_and_inventory()
+
+                # Атаки
+                slot_1_attack = true_inventory[15]
+                Attack(slot_1_attack, 1, sprites)
+                slot_2_attack = true_inventory[16]
+                Attack(slot_2_attack, 2, sprites)
+                slot_3_attack = true_inventory[17]
+                Attack(slot_3_attack, 3, sprites)
+
                 while start_game:
                     screen.fill((0, 0, 0))
                     if not player.is_died():
@@ -683,6 +826,11 @@ if __name__ == "__main__":
                                         if mob_died == len(mobs):
                                             start_game = False
                     sprites.update()
+                    pygame.display.flip()
+                for _ in range(30):
+                    screen.fill((0, 0, 0))
+                    sprites.update()
+                    sprites.draw(screen)
                     pygame.display.flip()
                 money += 10
                 exp += 10
