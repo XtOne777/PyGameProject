@@ -434,21 +434,21 @@ class Human(pygame.sprite.Sprite):
             self.lvl = 1
             self.exp = 0
             self.classes = classes
-            image = './textures/player/standart.png'
-            if isinstance(classes, Magic):
-                image = './textures/player/magic(standart).png'
-            elif isinstance(classes, Fighting):
-                image = './textures/player/fighter.png'
-            self.player = pygame.sprite.Sprite()
-            self.image = pygame.transform.scale(load_image(image), (105, 127.5))
-            self.rect = self.image.get_rect()
-            self.rect.x = 150
-            self.rect.y = 300
-
-            self.animate = False
-            self.step = 0
         else:
-            pass  # тут будет загрузка сохранёных данных
+            pass
+        image = './textures/player/standart.png'
+        if isinstance(classes, Magic):
+            image = './textures/player/magic(standart).png'
+        elif isinstance(classes, Fighting):
+            image = './textures/player/fighter.png'
+        self.player = pygame.sprite.Sprite()
+        self.image = pygame.transform.scale(load_image(image), (105, 127.5))
+        self.rect = self.image.get_rect()
+        self.rect.x = 150
+        self.rect.y = 300
+
+        self.animate = False
+        self.step = 0
 
     def attack(self, attack, type_attack='Normal'):
         if attack:
