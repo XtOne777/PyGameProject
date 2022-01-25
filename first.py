@@ -4,6 +4,7 @@ import os
 import sys
 import csv
 
+player_name = 'Player 1'
 money = 0
 exp = 0
 lvl_step = 1
@@ -16,6 +17,22 @@ true_inventory = [('', '') for _ in range(15)] + [('heavy_attack', 'Fire'), ('lo
 attacks = {('low_attack', 'Normal'): './textures/player/attacks/low_attack.png',
            ('heavy_attack', 'Fire'): './textures/player/attacks/heavy_attack_fire.png',
            ('heal', 'Holy'): './textures/player/attacks/heal_magic.png'}
+
+
+def save_game():
+    file_player = open(f'./{player["name"]}.csv', 'w')
+    writer = csv.writer(file_player)
+    data_got = player['all']
+    writer.writerow(list(data_got[:-1]))
+    writer.writerows(data_got[-1])
+    file_player.close()
+
+
+def leadboard_add():
+    file_ap = open('./tire_list.csv', 'a')
+    writer_csv = csv.writer(file_ap)
+    writer_csv.writerow((player_name, lvl_step))
+    file_ap.close()
 
 
 def shop_and_inventory():
@@ -705,11 +722,39 @@ if __name__ == "__main__":
                 sprites.add(main_scene)
 
                 # Игрок
-                if os.access('Player 1.csv', os.F_OK):
-                    player = Human('load_data: Player 1.csv', Magic(), sprites)
-                else:
-                    player = Human('Player 1', Magic(), sprites)
-                    pass  # Тут нужно дать выбор игроку какой класс выбрать
+                list_files = os.listdir()
+                player = None
+                for file in list_files:
+                    if file[-4:] == '.csv' and file != 'tire_list.csv':
+                        player = Human(f'load_data: {file}', Magic(), sprites)
+                        player_name = file[:-4]
+                        break
+                if not player:
+                    name_inp = ''
+                    stop_name = True
+                    font1 = pygame.font.Font(None, 50)
+                    tick = 0
+                    while stop_name:
+                        screen.fill((0, 0, 0))
+                        add_symbol = False
+                        text1_text = 'Введите имя персонажа:'
+                        font1.set_underline(False)
+                        text1 = font1.render(text1_text, True, (255, 255, 255))
+                        font1.set_underline(True)
+                        text2 = font1.render(name_inp, True, (255, 255, 255))
+                        for event in pygame.event.get():
+                            if event.type == pygame.KEYUP:
+                                if len(pygame.key.name(event.key)) == 1:
+                                    name_inp += pygame.key.name(event.key).upper()
+                                elif pygame.key.name(event.key) == 'backspace':
+                                    name_inp = name_inp[:-1]
+                                if event.key == pygame.K_RETURN:
+                                    stop_name = False
+                        screen.blit(text1, (275, 200))
+                        screen.blit(text2, (470 - len(name_inp) * 10, 300))
+                        pygame.display.update()
+                    player_name = name_inp
+                    player = Human(name_inp, Magic(), sprites)
 
                 # Полоска жизней
                 health_bar_line = HealthBar(player, sprites)
@@ -760,13 +805,19 @@ if __name__ == "__main__":
                 Attack(slot_2_attack, 2, sprites)
                 slot_3_attack = true_inventory[17]
                 Attack(slot_3_attack, 3, sprites)
+                
+                rage_quit = False
 
                 while start_game:
                     screen.fill((0, 0, 0))
                     if not player.is_died():
                         os.remove(f'./{player["name"]}.csv')
+                        leadboard_add()
                         good_load('./textures/scenes/game_over.png',
                                   './textures/scenes/game_over_RIP.png')
+                        fonts = pygame.font.Font(None, 30)
+                        screen.blit(fonts.render(f'{player_name} дошёл до {lvl_step} уровня!', True, (255, 255, 255)),
+                                    (350, 200))
                         while True:
                             for event in pygame.event.get():
                                 if event.type == pygame.QUIT:
@@ -780,6 +831,7 @@ if __name__ == "__main__":
                     for event in pygame.event.get():
                         if event.type == pygame.QUIT:
                             start_game = False
+                            rage_quit = True
                             running = False
                         if event.type == pygame.MOUSEMOTION:
                             pass
@@ -810,7 +862,9 @@ if __name__ == "__main__":
                                             sprites.draw(screen)
                                             for event_2 in pygame.event.get():
                                                 if event_2 == pygame.QUIT:
-                                                    sys.exit()
+                                                    stop = True
+                                                    rage_quit = True
+                                                    running = False
                                                 if event_2.type == pygame.MOUSEBUTTONUP:
                                                     num = AttackingZone.attack()
                                                     mobs[num].got_damage(damage)
@@ -859,17 +913,15 @@ if __name__ == "__main__":
                     sprites.update()
                     sprites.draw(screen)
                     pygame.display.flip()
-                money += 10
-                exp += 10
-                lvl_step += 1
-                start_game = True
-                file = open(f'./{player["name"]}.csv', 'w')
-                writer = csv.writer(file)
-                data_got = player['all']
-                writer.writerow(list(data_got[:-1]))
-                writer.writerows(data_got[-1])
-                file.close()
+                if not rage_quit:
+                    money += 10
+                    exp += 10
+                    lvl_step += 1
+                    start_game = True
+                if auto_save:
+                    save_game()
     except KeyError as e:
         print('YOU WIN')  # сюда надо заставку "Ты победил"
-        os.remove(f'./Player 1.csv')
+        leadboard_add()
+        os.remove(f'./{player_name}.csv')
     pygame.quit()  # завершение работы:
