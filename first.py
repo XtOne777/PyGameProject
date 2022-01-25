@@ -74,7 +74,8 @@ def shop_and_inventory():
     class Attacks(pygame.sprite.Sprite):
         def __init__(self, pos, name, *group):
             super().__init__(*group)
-            if name:
+            if name[0]:
+                print(name, pos, True)
                 self.image = pygame.transform.scale(load_image(attacks[name]), (90, 90))
             else:
                 self.image = pygame.surface.Surface((0, 0))
@@ -128,13 +129,9 @@ def shop_and_inventory():
         a = (180 + 250 * xy, 455)
         slots.append(Slot(a, sprite_inventory))
     attack_slots = list()
-    for i in range(15):
+    for i in range(18):
         pose = slots[i].return_pos()
-        attack_slots.append(Attacks((pose[0] + 5, pose[1] + 5), None, sprite_inventory))
-    for number, i in enumerate(true_slots):
-        if i[0]:
-            pose = slots[number].return_pos()
-            attack_slots.append(Attacks((pose[0] + 5, pose[1] + 5), true_slots[number], sprite_inventory))
+        attack_slots.append(Attacks((pose[0] + 5, pose[1] + 5), true_slots[i], sprite_inventory))
 
     inventory_shop = True
     while inventory_shop:
@@ -921,6 +918,7 @@ if __name__ == "__main__":
                 if auto_save:
                     save_game()
     except KeyError as e:
+        print(e)
         print('YOU WIN')  # сюда надо заставку "Ты победил"
         leadboard_add()
         os.remove(f'./{player_name}.csv')
