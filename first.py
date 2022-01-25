@@ -924,4 +924,4 @@ if __name__ == "__main__":
         print('YOU WIN')  # сюда надо заставку "Ты победил"
         leadboard_add()
         os.remove(f'./{player_name}.csv')
-    pygame.quit()  # завершение работы:
+    pygame.quit()  # завершение работы
