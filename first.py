@@ -2,6 +2,7 @@ from classes import *
 import pygame
 import os
 import sys
+import csv
 
 money = 0
 exp = 0
@@ -429,18 +430,38 @@ class Human(pygame.sprite.Sprite):
             self.name = name
             self.max_stamina = 15
             self.max_health = 100
-            self.health = 0 + self.max_health
-            self.stamina = 0 + self.max_stamina
-            self.lvl = 1
-            self.exp = 0
             self.classes = classes
         else:
-            pass
+            with open(f'./{name[11:]}') as csvfile:
+                data = list(csv.reader(csvfile))
+                data_get = data[0]
+                self.name = data_get[0]
+                self.max_health = int(data_get[1])
+                self.max_stamina = int(data_get[2])
+                if data_get[3] == 'magic':
+                    self.classes = Magic()
+                elif data_get[3] == 'fighter':
+                    self.classes = Fighting()
+                else:
+                    self.classes = Standart()
+                global lvl_step, exp, money, true_inventory
+                lvl_step = int(data_get[4])
+                exp = int(data_get[5])
+                money = int(data_get[6])
+                true_inventory = list()
+                for i in data[1:]:
+                    if len(i) != 0:
+                        true_inventory.append(tuple(i))
         image = './textures/player/standart.png'
-        if isinstance(classes, Magic):
+        self.class_name = 'standart'
+        if isinstance(self.classes, Magic):
             image = './textures/player/magic(standart).png'
-        elif isinstance(classes, Fighting):
+            self.class_name = 'magic'
+        elif isinstance(self.classes, Fighting):
             image = './textures/player/fighter.png'
+            self.class_name = 'fighter'
+        self.health = 0 + self.max_health
+        self.stamina = 0 + self.max_stamina
         self.player = pygame.sprite.Sprite()
         self.image = pygame.transform.scale(load_image(image), (105, 127.5))
         self.rect = self.image.get_rect()
@@ -482,6 +503,8 @@ class Human(pygame.sprite.Sprite):
         self.animate = True
 
     def __getitem__(self, item):
+        if item == 'all':
+            return self.name, self.max_health, self.max_stamina, self.class_name, lvl_step, exp, money, true_inventory
         if item == 'max_health':
             return self.max_health
         elif item == 'name':
@@ -673,7 +696,6 @@ if __name__ == "__main__":
                     break
                 pygame.display.flip()
             while running:
-
                 sprites.empty()
                 # Главная сцена
                 main_scene = pygame.sprite.Sprite()
@@ -683,7 +705,11 @@ if __name__ == "__main__":
                 sprites.add(main_scene)
 
                 # Игрок
-                player = Human('Player 1', Magic(), sprites)
+                if os.access('Player 1.csv', os.F_OK):
+                    player = Human('load_data: Player 1.csv', Magic(), sprites)
+                else:
+                    player = Human('Player 1', Magic(), sprites)
+                    pass  # Тут нужно дать выбор игроку какой класс выбрать
 
                 # Полоска жизней
                 health_bar_line = HealthBar(player, sprites)
@@ -738,6 +764,7 @@ if __name__ == "__main__":
                 while start_game:
                     screen.fill((0, 0, 0))
                     if not player.is_died():
+                        os.remove(f'./{player["name"]}.csv')
                         good_load('./textures/scenes/game_over.png',
                                   './textures/scenes/game_over_RIP.png')
                         while True:
@@ -836,10 +863,13 @@ if __name__ == "__main__":
                 exp += 10
                 lvl_step += 1
                 start_game = True
-    except KeyError:
-        while True:
-            screen.fill((randint(0, 255), randint(0, 255), randint(0, 255)))
-            pygame.display.flip()
-    except Exception as e:
-        print(e)
+                file = open(f'./{player["name"]}.csv', 'w')
+                writer = csv.writer(file)
+                data_got = player['all']
+                writer.writerow(list(data_got[:-1]))
+                writer.writerows(data_got[-1])
+                file.close()
+    except KeyError as e:
+        print('YOU WIN')  # сюда надо заставку "Ты победил"
+        os.remove(f'./Player 1.csv')
     pygame.quit()  # завершение работы:
