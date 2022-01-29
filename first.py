@@ -3,6 +3,7 @@ import pygame
 import os
 import sys
 import csv
+import webbrowser
 
 player_name = 'Player 1'
 money = 0
@@ -17,6 +18,34 @@ true_inventory = [('', '') for _ in range(15)] + [('heavy_attack', 'Fire'), ('lo
 attacks = {('low_attack', 'Normal'): './textures/player/attacks/low_attack.png',
            ('heavy_attack', 'Fire'): './textures/player/attacks/heavy_attack_fire.png',
            ('heal', 'Holy'): './textures/player/attacks/heal_magic.png'}
+
+
+class Animation(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, x_transform=1, *group):
+        super().__init__(*group)
+        self.sprites = []
+        self.sprites.append(load_image('./textures/scenes/frog_1.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_2.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_3.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_4.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_5.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_6.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_7.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_8.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_9.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_10.png', 0))
+        self.current_sprite = 0
+        self.x_transform = x_transform
+        self.image = pygame.transform.scale(self.sprites[self.current_sprite], (128 * x_transform, 64 * x_transform))
+        self.rect = self.image.get_rect()
+        self.rect.topleft = [pos_x, pos_y]
+
+    def update(self):
+        self.current_sprite += 1
+        if self.current_sprite >= len(self.sprites):
+            self.current_sprite = 0
+        self.image = pygame.transform.scale(self.sprites[self.current_sprite], (128 * self.x_transform,
+                                                                                64 * self.x_transform))
 
 
 def save_game():
@@ -71,10 +100,42 @@ def shop_and_inventory():
     button_skip.rect.x, button_skip.rect.y = 760, 500
     sprite_shop.add(button_skip)
 
+    font_inventory = pygame.font.Font(None, 30)
+
+    mouse_place = pygame.sprite.Sprite()
+    mouse_place.image = pygame.surface.Surface((1, 1))
+    mouse_place.rect = mouse_place.image.get_rect()
+    mouse_place.rect.x, mouse_place.rect.y = pygame.mouse.get_pos()
+    sprite_shop.add(mouse_place)
+
+    global money, exp
+
+    money_inv = pygame.sprite.Sprite()
+    money_inv.image = font_inventory.render(f'Деньги: {money}', True, (255, 255, 0))
+    money_inv.rect = money_inv.image.get_rect()
+    money_inv.rect.x, money_inv.rect.y = 900 - len(str(money)) * 10, 10
+
+    sprite_shop.add(money_inv)
+
+    exp_inv = pygame.sprite.Sprite()
+    exp_inv.image = font_inventory.render(f'Опыт: {exp}', True, (100, 100, 255))
+    exp_inv.rect = exp_inv.image.get_rect()
+    exp_inv.rect.x, exp_inv.rect.y = 910 - len(str(exp)) * 10, 40
+
+    soda = pygame.sprite.Sprite()
+    soda.image = load_image('./textures/scenes/soda.png')
+    soda.rect = soda.image.get_rect()
+    soda.rect.x, soda.rect.y = 790, 240
+    sprite_shop.add(soda)
+
+    soda_sound = pygame.mixer.Sound('./data/sounds/mew.mp3')
+
+    sprite_shop.add(exp_inv)
+
     class Attacks(pygame.sprite.Sprite):
         def __init__(self, pos, name, *group):
             super().__init__(*group)
-            if name:
+            if name[0]:
                 self.image = pygame.transform.scale(load_image(attacks[name]), (90, 90))
             else:
                 self.image = pygame.surface.Surface((0, 0))
@@ -128,17 +189,16 @@ def shop_and_inventory():
         a = (180 + 250 * xy, 455)
         slots.append(Slot(a, sprite_inventory))
     attack_slots = list()
-    for i in range(15):
+    for i in range(18):
         pose = slots[i].return_pos()
-        attack_slots.append(Attacks((pose[0] + 5, pose[1] + 5), None, sprite_inventory))
-    for number, i in enumerate(true_slots):
-        if i[0]:
-            pose = slots[number].return_pos()
-            attack_slots.append(Attacks((pose[0] + 5, pose[1] + 5), true_slots[number], sprite_inventory))
+        attack_slots.append(Attacks((pose[0] + 5, pose[1] + 5), true_slots[i], sprite_inventory))
 
     inventory_shop = True
     while inventory_shop:
         screen.fill((0, 0, 0))
+
+        mouse_place.rect.x, mouse_place.rect.y = pygame.mouse.get_pos()
+
         if inventory_open:
             sprite_inventory.update()
             sprite_inventory.draw(screen)
@@ -147,6 +207,13 @@ def shop_and_inventory():
             sprite_shop.draw(screen)
         for events in pygame.event.get():
             if events.type == pygame.MOUSEBUTTONUP:
+                if pygame.sprite.collide_mask(soda, mouse_place):
+                    soda_sound.play()
+                    if randint(0, 100) == 100:
+                        money += 1
+                    money_inv.image = font_inventory.render(f'Деньги: {money}', True, (255, 255, 0))
+                    money_inv.rect.x, money_inv.rect.y = 900 - len(str(money)) * 10, 10
+                    exp_inv.image = font_inventory.render(f'Опыт: {exp}', True, (100, 100, 255))
                 xx, yy = pygame.mouse.get_pos()
                 if inventory_open:
                     for number, i in enumerate(slots):
@@ -187,6 +254,8 @@ class Particle(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = pos
         self.ticks = 0
+        if not particles:
+            self.kill()
 
     def update(self):
         if self.ticks == 10:
@@ -651,7 +720,7 @@ if __name__ == "__main__":
     github_img = pygame.transform.scale(load_image("textures/scenes/git_btn.png"), (90, 90))
     # credits_img = load_image("textures/scenes/cred_btn.jpg")
     effect_img = load_image("textures/scenes/ef_btn.png", 0)
-    save_img = load_image("textures/scenes/save_btn.jpg", 0)
+    save_img = load_image("textures/scenes/save_btn.png", 0)
 
 
     class Button(pygame.sprite.Sprite):
@@ -706,6 +775,25 @@ if __name__ == "__main__":
                                 start_menu = False
                                 start_game = True
                                 load_game()
+                        else:
+                            if 370 <= event.pos[0] <= 370 + 200 and 130 <= event.pos[1] <= 130 + 67:
+                                if particles:
+                                    slot_color_change(effect_btn, (255, 0, 0))
+                                    particles = False
+                                else:
+                                    slot_color_change(effect_btn, (0, 255, 0))
+                                    particles = True
+                            elif 370 <= event.pos[0] <= 370 + 200 and 330 <= event.pos[1] <= 330 + 67:
+                                if auto_save:
+                                    slot_color_change(save_btn, (255, 0, 0))
+                                    auto_save = False
+                                else:
+                                    slot_color_change(save_btn, (0, 255, 0))
+                                    auto_save = True
+                            elif 420 <= event.pos[0] <= 420 + 90 and 430 <= event.pos[1] <= 430 + 90:
+                                webbrowser.open('https://discord.com/invite/sRH3PQFCHY', new=2)
+                            elif 570 <= event.pos[0] <= 570 + 90 and 430 <= event.pos[1] <= 430 + 90:
+                                webbrowser.open('https://github.com/XtOne777/PyGameProject', new=2)
                 if btn_click:
                     settings_group.draw(screen)
                     settings_group.update()
@@ -714,6 +802,22 @@ if __name__ == "__main__":
                 pygame.display.flip()
             while running:
                 sprites.empty()
+                anim_group = pygame.sprite.Group()
+                animation = Animation(180, 150, 5, anim_group)
+                load_text = pygame.sprite.Sprite()
+                load_text.image = load_image('./textures/scenes/load_image.png', 0)
+                load_text.rect = load_text.image.get_rect()
+                load_text.rect.x, load_text.rect.y = 350, 10
+                anim_group.add(load_text)
+
+                def animation_next():
+                    screen.fill((0, 0, 0))
+                    anim_group.update()
+                    anim_group.draw(screen)
+                    pygame.display.flip()
+                    clock.tick(20)
+
+
                 # Главная сцена
                 main_scene = pygame.sprite.Sprite()
                 main_scene.image = load_image('./textures/scenes/scene(lvl 1).png', 0)
@@ -755,6 +859,7 @@ if __name__ == "__main__":
                         pygame.display.update()
                     player_name = name_inp
                     player = Human(name_inp, Magic(), sprites)
+                animation_next()
 
                 # Полоска жизней
                 health_bar_line = HealthBar(player, sprites)
@@ -764,6 +869,7 @@ if __name__ == "__main__":
                 health_bar.rect = health_bar.image.get_rect()
                 health_bar.rect.x, health_bar.rect.y = 0, 0
                 sprites.add(health_bar)
+                animation_next()
 
                 # Полоска стамины
                 stamina_bar_line = StaminaBar(player, sprites)
@@ -773,14 +879,19 @@ if __name__ == "__main__":
                 stamina_bar.rect = stamina_bar.image.get_rect()
                 stamina_bar.rect.x, stamina_bar.rect.y = 45, 95
                 sprites.add(stamina_bar)
+                animation_next()
 
                 # Слоты атак
                 slot_1 = slot_load('./textures/player/attacks/slot_1.png', (300, 488))
+                animation_next()
                 slot_2 = slot_load('./textures/player/attacks/slot_2.png', (450, 488))
+                animation_next()
                 slot_3 = slot_load('./textures/player/attacks/slot_3.png', (600, 488))
+                animation_next()
                 sprites.add(slot_1)
                 sprites.add(slot_2)
                 sprites.add(slot_3)
+                animation_next()
 
                 # Мобы
                 mobs = list()
@@ -788,31 +899,40 @@ if __name__ == "__main__":
                 check_list = list()
                 for mob_data in mobs_list:
                     check_list.append(mob_data)
+                    animation_next()
                 for steps in range(len(mobs_list)):
                     mobs.append(Mob(check_list[steps][0], check_list[steps][1], check_list[steps][2],
                                     (600 + (steps % 2) * 100, 150 + 200 / len(mobs_list) * (steps + 1)), sprites))
+                animation_next()
 
                 # Зоны атаки
                 AttackingZone = AttackingZoneClass(mobs, sprites)
+                for _ in range(15):
+                    animation_next()
 
                 # Старт игры
                 shop_and_inventory()
+                animation_next()
 
                 # Атаки
                 slot_1_attack = true_inventory[15]
                 Attack(slot_1_attack, 1, sprites)
+                animation_next()
                 slot_2_attack = true_inventory[16]
                 Attack(slot_2_attack, 2, sprites)
+                animation_next()
                 slot_3_attack = true_inventory[17]
                 Attack(slot_3_attack, 3, sprites)
+                animation_next()
                 
                 rage_quit = False
 
                 while start_game:
                     screen.fill((0, 0, 0))
                     if not player.is_died():
-                        os.remove(f'./{player["name"]}.csv')
-                        leadboard_add()
+                        if auto_save:
+                            os.remove(f'./{player["name"]}.csv')
+                            leadboard_add()
                         good_load('./textures/scenes/game_over.png',
                                   './textures/scenes/game_over_RIP.png')
                         fonts = pygame.font.Font(None, 30)
@@ -921,7 +1041,9 @@ if __name__ == "__main__":
                 if auto_save:
                     save_game()
     except KeyError as e:
+        print(e)
         print('YOU WIN')  # сюда надо заставку "Ты победил"
-        leadboard_add()
-        os.remove(f'./{player_name}.csv')
-    pygame.quit()  # завершение работы:
+        if auto_save:
+            leadboard_add()
+            os.remove(f'./{player_name}.csv')
+    pygame.quit()  # завершение работы
