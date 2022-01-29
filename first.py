@@ -99,6 +99,38 @@ def shop_and_inventory():
     button_skip.rect.x, button_skip.rect.y = 760, 500
     sprite_shop.add(button_skip)
 
+    font_inventory = pygame.font.Font(None, 30)
+
+    mouse_place = pygame.sprite.Sprite()
+    mouse_place.image = pygame.surface.Surface((1, 1))
+    mouse_place.rect = mouse_place.image.get_rect()
+    mouse_place.rect.x, mouse_place.rect.y = pygame.mouse.get_pos()
+    sprite_shop.add(mouse_place)
+
+    global money, exp
+
+    money_inv = pygame.sprite.Sprite()
+    money_inv.image = font_inventory.render(f'Деньги: {money}', True, (255, 255, 0))
+    money_inv.rect = money_inv.image.get_rect()
+    money_inv.rect.x, money_inv.rect.y = 900, 10
+
+    sprite_shop.add(money_inv)
+
+    exp_inv = pygame.sprite.Sprite()
+    exp_inv.image = font_inventory.render(f'Опыт: {exp}', True, (100, 100, 255))
+    exp_inv.rect = exp_inv.image.get_rect()
+    exp_inv.rect.x, exp_inv.rect.y = 900, 40
+
+    soda = pygame.sprite.Sprite()
+    soda.image = load_image('./textures/scenes/soda.png')
+    soda.rect = soda.image.get_rect()
+    soda.rect.x, soda.rect.y = 790, 240
+    sprite_shop.add(soda)
+
+    soda_sound = pygame.mixer.Sound('./data/sounds/mew.mp3')
+
+    sprite_shop.add(exp_inv)
+
     class Attacks(pygame.sprite.Sprite):
         def __init__(self, pos, name, *group):
             super().__init__(*group)
@@ -163,6 +195,9 @@ def shop_and_inventory():
     inventory_shop = True
     while inventory_shop:
         screen.fill((0, 0, 0))
+
+        mouse_place.rect.x, mouse_place.rect.y = pygame.mouse.get_pos()
+
         if inventory_open:
             sprite_inventory.update()
             sprite_inventory.draw(screen)
@@ -171,6 +206,8 @@ def shop_and_inventory():
             sprite_shop.draw(screen)
         for events in pygame.event.get():
             if events.type == pygame.MOUSEBUTTONUP:
+                if pygame.sprite.collide_mask(soda, mouse_place):
+                    soda_sound.play()
                 xx, yy = pygame.mouse.get_pos()
                 if inventory_open:
                     for number, i in enumerate(slots):
@@ -843,7 +880,7 @@ if __name__ == "__main__":
 
                 # Зоны атаки
                 AttackingZone = AttackingZoneClass(mobs, sprites)
-                for i in range(15):
+                for _ in range(15):
                     animation_next()
 
                 # Старт игры
