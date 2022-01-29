@@ -3,6 +3,7 @@ import pygame
 import os
 import sys
 import csv
+import webbrowser
 
 player_name = 'Player 1'
 money = 0
@@ -782,13 +783,17 @@ if __name__ == "__main__":
                                 else:
                                     slot_color_change(effect_btn, (0, 255, 0))
                                     particles = True
-                            if 370 <= event.pos[0] <= 370 + 200 and 330 <= event.pos[1] <= 330 + 67:
+                            elif 370 <= event.pos[0] <= 370 + 200 and 330 <= event.pos[1] <= 330 + 67:
                                 if auto_save:
                                     slot_color_change(save_btn, (255, 0, 0))
                                     auto_save = False
                                 else:
                                     slot_color_change(save_btn, (0, 255, 0))
                                     auto_save = True
+                            elif 420 <= event.pos[0] <= 420 + 90 and 430 <= event.pos[1] <= 430 + 90:
+                                webbrowser.open('https://discord.com/invite/sRH3PQFCHY', new=2)
+                            elif 570 <= event.pos[0] <= 570 + 90 and 430 <= event.pos[1] <= 430 + 90:
+                                webbrowser.open('https://github.com/XtOne777/PyGameProject', new=2)
                 if btn_click:
                     settings_group.draw(screen)
                     settings_group.update()
