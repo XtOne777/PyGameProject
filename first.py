@@ -19,6 +19,34 @@ attacks = {('low_attack', 'Normal'): './textures/player/attacks/low_attack.png',
            ('heal', 'Holy'): './textures/player/attacks/heal_magic.png'}
 
 
+class Animation(pygame.sprite.Sprite):
+    def __init__(self, pos_x, pos_y, x_transform=1, *group):
+        super().__init__(*group)
+        self.sprites = []
+        self.sprites.append(load_image('./textures/scenes/frog_1.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_2.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_3.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_4.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_5.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_6.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_7.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_8.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_9.png', 0))
+        self.sprites.append(load_image('./textures/scenes/frog_10.png', 0))
+        self.current_sprite = 0
+        self.x_transform = x_transform
+        self.image = pygame.transform.scale(self.sprites[self.current_sprite], (128 * x_transform, 64 * x_transform))
+        self.rect = self.image.get_rect()
+        self.rect.topleft = [pos_x, pos_y]
+
+    def update(self):
+        self.current_sprite += 1
+        if self.current_sprite >= len(self.sprites):
+            self.current_sprite = 0
+        self.image = pygame.transform.scale(self.sprites[self.current_sprite], (128 * self.x_transform,
+                                                                                64 * self.x_transform))
+
+
 def save_game():
     file_player = open(f'./{player["name"]}.csv', 'w')
     writer = csv.writer(file_player)
@@ -75,7 +103,6 @@ def shop_and_inventory():
         def __init__(self, pos, name, *group):
             super().__init__(*group)
             if name[0]:
-                print(name, pos, True)
                 self.image = pygame.transform.scale(load_image(attacks[name]), (90, 90))
             else:
                 self.image = pygame.surface.Surface((0, 0))
@@ -711,6 +738,22 @@ if __name__ == "__main__":
                 pygame.display.flip()
             while running:
                 sprites.empty()
+                anim_group = pygame.sprite.Group()
+                animation = Animation(180, 150, 5, anim_group)
+                load_text = pygame.sprite.Sprite()
+                load_text.image = load_image('./textures/scenes/load_image.png', 0)
+                load_text.rect = load_text.image.get_rect()
+                load_text.rect.x, load_text.rect.y = 350, 10
+                anim_group.add(load_text)
+
+                def animation_next():
+                    screen.fill((0, 0, 0))
+                    anim_group.update()
+                    anim_group.draw(screen)
+                    pygame.display.flip()
+                    clock.tick(20)
+
+
                 # Главная сцена
                 main_scene = pygame.sprite.Sprite()
                 main_scene.image = load_image('./textures/scenes/scene(lvl 1).png', 0)
@@ -752,6 +795,7 @@ if __name__ == "__main__":
                         pygame.display.update()
                     player_name = name_inp
                     player = Human(name_inp, Magic(), sprites)
+                animation_next()
 
                 # Полоска жизней
                 health_bar_line = HealthBar(player, sprites)
@@ -761,6 +805,7 @@ if __name__ == "__main__":
                 health_bar.rect = health_bar.image.get_rect()
                 health_bar.rect.x, health_bar.rect.y = 0, 0
                 sprites.add(health_bar)
+                animation_next()
 
                 # Полоска стамины
                 stamina_bar_line = StaminaBar(player, sprites)
@@ -770,14 +815,19 @@ if __name__ == "__main__":
                 stamina_bar.rect = stamina_bar.image.get_rect()
                 stamina_bar.rect.x, stamina_bar.rect.y = 45, 95
                 sprites.add(stamina_bar)
+                animation_next()
 
                 # Слоты атак
                 slot_1 = slot_load('./textures/player/attacks/slot_1.png', (300, 488))
+                animation_next()
                 slot_2 = slot_load('./textures/player/attacks/slot_2.png', (450, 488))
+                animation_next()
                 slot_3 = slot_load('./textures/player/attacks/slot_3.png', (600, 488))
+                animation_next()
                 sprites.add(slot_1)
                 sprites.add(slot_2)
                 sprites.add(slot_3)
+                animation_next()
 
                 # Мобы
                 mobs = list()
@@ -785,23 +835,31 @@ if __name__ == "__main__":
                 check_list = list()
                 for mob_data in mobs_list:
                     check_list.append(mob_data)
+                    animation_next()
                 for steps in range(len(mobs_list)):
                     mobs.append(Mob(check_list[steps][0], check_list[steps][1], check_list[steps][2],
                                     (600 + (steps % 2) * 100, 150 + 200 / len(mobs_list) * (steps + 1)), sprites))
+                animation_next()
 
                 # Зоны атаки
                 AttackingZone = AttackingZoneClass(mobs, sprites)
+                for i in range(15):
+                    animation_next()
 
                 # Старт игры
                 shop_and_inventory()
+                animation_next()
 
                 # Атаки
                 slot_1_attack = true_inventory[15]
                 Attack(slot_1_attack, 1, sprites)
+                animation_next()
                 slot_2_attack = true_inventory[16]
                 Attack(slot_2_attack, 2, sprites)
+                animation_next()
                 slot_3_attack = true_inventory[17]
                 Attack(slot_3_attack, 3, sprites)
+                animation_next()
                 
                 rage_quit = False
 
