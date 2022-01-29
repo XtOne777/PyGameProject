@@ -112,14 +112,14 @@ def shop_and_inventory():
     money_inv = pygame.sprite.Sprite()
     money_inv.image = font_inventory.render(f'Деньги: {money}', True, (255, 255, 0))
     money_inv.rect = money_inv.image.get_rect()
-    money_inv.rect.x, money_inv.rect.y = 900, 10
+    money_inv.rect.x, money_inv.rect.y = 900 - len(str(money)) * 10, 10
 
     sprite_shop.add(money_inv)
 
     exp_inv = pygame.sprite.Sprite()
     exp_inv.image = font_inventory.render(f'Опыт: {exp}', True, (100, 100, 255))
     exp_inv.rect = exp_inv.image.get_rect()
-    exp_inv.rect.x, exp_inv.rect.y = 900, 40
+    exp_inv.rect.x, exp_inv.rect.y = 910 - len(str(exp)) * 10, 40
 
     soda = pygame.sprite.Sprite()
     soda.image = load_image('./textures/scenes/soda.png')
@@ -208,6 +208,11 @@ def shop_and_inventory():
             if events.type == pygame.MOUSEBUTTONUP:
                 if pygame.sprite.collide_mask(soda, mouse_place):
                     soda_sound.play()
+                    if randint(0, 100) == 100:
+                        money += 1
+                    money_inv.image = font_inventory.render(f'Деньги: {money}', True, (255, 255, 0))
+                    money_inv.rect.x, money_inv.rect.y = 900 - len(str(money)) * 10, 10
+                    exp_inv.image = font_inventory.render(f'Опыт: {exp}', True, (100, 100, 255))
                 xx, yy = pygame.mouse.get_pos()
                 if inventory_open:
                     for number, i in enumerate(slots):
@@ -248,6 +253,8 @@ class Particle(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x, self.rect.y = pos
         self.ticks = 0
+        if not particles:
+            self.kill()
 
     def update(self):
         if self.ticks == 10:
@@ -712,7 +719,7 @@ if __name__ == "__main__":
     github_img = pygame.transform.scale(load_image("textures/scenes/git_btn.png"), (90, 90))
     # credits_img = load_image("textures/scenes/cred_btn.jpg")
     effect_img = load_image("textures/scenes/ef_btn.png", 0)
-    save_img = load_image("textures/scenes/save_btn.jpg", 0)
+    save_img = load_image("textures/scenes/save_btn.png", 0)
 
 
     class Button(pygame.sprite.Sprite):
@@ -767,6 +774,21 @@ if __name__ == "__main__":
                                 start_menu = False
                                 start_game = True
                                 load_game()
+                        else:
+                            if 370 <= event.pos[0] <= 370 + 200 and 130 <= event.pos[1] <= 130 + 67:
+                                if particles:
+                                    slot_color_change(effect_btn, (255, 0, 0))
+                                    particles = False
+                                else:
+                                    slot_color_change(effect_btn, (0, 255, 0))
+                                    particles = True
+                            if 370 <= event.pos[0] <= 370 + 200 and 330 <= event.pos[1] <= 330 + 67:
+                                if auto_save:
+                                    slot_color_change(save_btn, (255, 0, 0))
+                                    auto_save = False
+                                else:
+                                    slot_color_change(save_btn, (0, 255, 0))
+                                    auto_save = True
                 if btn_click:
                     settings_group.draw(screen)
                     settings_group.update()
@@ -903,8 +925,9 @@ if __name__ == "__main__":
                 while start_game:
                     screen.fill((0, 0, 0))
                     if not player.is_died():
-                        os.remove(f'./{player["name"]}.csv')
-                        leadboard_add()
+                        if auto_save:
+                            os.remove(f'./{player["name"]}.csv')
+                            leadboard_add()
                         good_load('./textures/scenes/game_over.png',
                                   './textures/scenes/game_over_RIP.png')
                         fonts = pygame.font.Font(None, 30)
@@ -1015,6 +1038,7 @@ if __name__ == "__main__":
     except KeyError as e:
         print(e)
         print('YOU WIN')  # сюда надо заставку "Ты победил"
-        leadboard_add()
-        os.remove(f'./{player_name}.csv')
+        if auto_save:
+            leadboard_add()
+            os.remove(f'./{player_name}.csv')
     pygame.quit()  # завершение работы
