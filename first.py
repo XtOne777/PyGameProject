@@ -840,7 +840,7 @@ if __name__ == "__main__":
         for value_lead in data_leadboard:
             list_keys.append(str(data_leadboard[value_lead]) + ' ' + str(value_lead))
         list_keys.sort(key=lambda x: int(x.split()[0]), reverse=True)  # Сортировка по месту дохождения
-        for kkk in list_keys[:10]:  # Всего 10 человеков в таблице рекордов
+        for kkk in list_keys[:9]:  # Всего 9 человеков в таблице рекордов
             dict2[kkk.split()[1]] = data_leadboard[kkk.split()[1]]
 
 
